@@ -1,0 +1,57 @@
+@startuml
+autonumber
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+
+actor "Dueño de Tienda" as User
+participant "App Móvil\n(Android)" as App
+participant "Lector NFC" as NFC
+participant "Módulo\nInventario" as Inv
+database "Almacenamiento\nLocal (DB)" as DB
+
+title Registro de Producto y Vinculación de Tarjeta NFC
+
+== Fase de Entrada de Datos ==
+
+User -> App: Selecciona Tab "Inventario"
+activate App
+User -> App: Clic en "Nuevo Producto" / "Agregar"
+App -> User: Muestra Formulario (Nombre, Precio, Stock)
+
+User -> App: Ingresa detalles del producto
+User -> App: Presiona "Vincular Tarjeta NFC"
+
+== Fase de Lectura y Vinculación ==
+
+App -> User: Solicita: "Acerque el Tag NFC al móvil"
+User -> NFC: Acerca producto/tarjeta nueva
+activate NFC
+NFC -> App: Envía UID único del Tag
+deactivate NFC
+
+App -> DB: Verificar si UID ya existe
+activate DB
+DB --> App: Resultado (Disponible / Ya en uso)
+deactivate DB
+
+alt UID Disponible
+    App --> User: Confirmación: "Tarjeta detectada con éxito"
+    
+    User -> App: Guardar Producto
+    
+    App -> Inv: Procesar Registro de Producto
+    activate Inv
+    Inv -> DB: INSERT INTO Productos (UID, Nombre, Precio, Stock)
+    activate DB
+    DB --> Inv: OK (Registro Exitoso)
+    deactivate DB
+    deactivate Inv
+    
+    App --> User: Notifica: "Producto registrado e inventariado"
+else UID Ya Vinculado a otro producto
+    App --> User: Error: "Esta tarjeta ya pertenece a otro producto"
+    App --> User: Sugerir usar una tarjeta diferente o editar el existente
+end
+
+deactivate App
+@enduml

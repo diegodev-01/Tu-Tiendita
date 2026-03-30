@@ -1,0 +1,32 @@
+@startuml
+title Creacion de un reporte de ventas en un periodo de tiempo
+
+[*] --> Configuracion : Iniciar solicitud
+state Configuracion {
+  [*] --> EsperandoRango : Seleccionar fechas
+  EsperandoRango --> ValidandoFechas : Rango ingresado
+  ValidandoFechas --> EsperandoRango : Error [Fecha fin < Fecha inicio]
+  ValidandoFechas --> ProcesandoDatos : Rango válido
+}
+
+state ProcesandoDatos {
+  [*] --> ConsultandoVentas : Ejecutar Query
+  ConsultandoVentas --> CalculandoEstadisticas : Datos recuperados
+  CalculandoEstadisticas : entry / Sumar totales por periodo
+  CalculandoEstadisticas : entry / Calcular promedios y productos en tendencia
+}
+
+ProcesandoDatos --> GeneracionExitosa : Proceso completo
+ProcesandoDatos --> SinDatos : No hay ventas en el periodo
+
+GeneracionExitosa --> VisualizandoReporte
+SinDatos --> Configuracion : Reintentar con otras fechas
+
+state VisualizandoReporte {
+  [*] --> VistaPantalla
+  VistaPantalla --> Exportando : Seleccionar formato (PDF/Excel)
+  Exportando --> VistaPantalla : Descarga finalizada
+}
+
+VisualizandoReporte --> [*] : Cerrar reporte
+@enduml

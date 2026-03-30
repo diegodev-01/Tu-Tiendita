@@ -1,0 +1,87 @@
+@startuml
+autonumber
+skinparam style strictuml
+skinparam sequenceMessageAlign center
+skinparam MaxMessageSize 150
+
+actor "Dueño de Tienda" as User
+participant "App Móvil\n(Android)" as App
+participant "Lector NFC" as NFC
+participant "Módulo\nInventario" as Inv
+database "Almacenamiento\nLocal (DB/Files)" as DB
+actor "Cliente" as Cliente
+
+title Flujo de Venta: NFC + Pago con QR Estático del Banco
+
+== Fase 1: Escaneo y Carrito ==
+
+User -> App: Selecciona Tab "Ventas"
+activate App
+App -> User: Muestra interfaz de escaneo
+
+loop Lectura de Productos
+    User -> NFC: Acerca producto al móvil
+    activate NFC
+    NFC -> App: Envía UID (NFC Tag)
+    deactivate NFC
+    
+    App -> Inv: Validar Producto y Stock
+    activate Inv
+    Inv -> DB: Consultar datos por UID
+    activate DB
+    DB --> Inv: Datos (Nombre, Precio, Stock)
+    deactivate DB
+    
+    alt Stock > 0
+        Inv --> App: OK (Producto disponible)
+        App -> App: Añadir a Lista de Venta
+        App --> User: Confirmación visual/vibración
+    else Stock = 0
+        Inv --> App: Error: Agotado
+        App --> User: Alerta: "Sin Existencias"
+    end
+    deactivate Inv
+end
+
+== Fase 2: Proceso de Cobro (QR del Banco) ==
+
+User -> App: Finalizar Carrito / Mostrar QR
+App -> DB: Recuperar Imagen QR Estático (Pre-cargado)
+activate DB
+DB --> App: Archivo de Imagen + Fecha Expiración (1 año)
+deactivate DB
+
+alt Fecha Actual < Fecha Expiración
+    App -> App: Mostrar QR del Banco en pantalla
+    App --> User: Muestra QR para cobro
+    User -> Cliente: Presenta pantalla al Cliente
+    Cliente -> Cliente: Escanea y realiza Transferencia
+    
+    User -> App: Confirmar Transacción Exitosa
+    
+    == Fase 3: Registro y Descuento de Inventario ==
+    
+    App -> Inv: Actualizar Inventario
+    activate Inv
+    Inv -> DB: UPDATE Stock (Restar vendidos)
+    activate DB
+    DB --> Inv: Confirmado
+    deactivate DB
+    deactivate Inv
+
+    Inv -> DB: INSERT Registro Venta (Monto, Fecha, Tipo: QR)
+    activate DB
+    DB --> Inv: Venta Registrada
+    deactivate DB
+
+    Inv --> App: Transacción Completa (ID Venta)
+    deactivate Inv
+
+    App -> App: Generar Recibo de Venta (PDF)
+    App --> User: Venta Finalizada con Éxito
+else QR Expirado (Caso borde tras 1 año)
+    App --> User: Alerta: Actualizar QR del banco en ajustes
+end
+
+deactivate App
+@enduml
