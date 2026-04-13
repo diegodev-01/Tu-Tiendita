@@ -9,7 +9,10 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NFCReaderUsageDescription": "Permitir acceso al NFC para escanear etiquetas de productos"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,9 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": ["android.permission.NFC", "android.permission.NFC"],
+      "package": "com.anonymous.Tutiendita"
     },
     "web": {
       "output": "static",
@@ -37,6 +42,12 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "Permitir acceso al NFC para escanear etiquetas de productos"
         }
       ]
     ],
