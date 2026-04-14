@@ -2,6 +2,9 @@ import NfcManager, { Ndef, NfcTech } from 'react-native-nfc-manager';
 
 export const nfcService = {
     init: async () => {
+        const isSupported = await NfcManager.isSupported();
+        if (!isSupported) throw new Error('NFC no soportado en este dispositivo');
+
         await NfcManager.start();
     },
 
