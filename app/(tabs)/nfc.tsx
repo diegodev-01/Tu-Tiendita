@@ -6,7 +6,7 @@ import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Fonts } from '@/constants/theme';
+// import { Fonts } from '@/constants/theme';
 import { nfcService } from '@/src/services/nfc-service';
 
 interface ProductTag {
@@ -75,9 +75,7 @@ export default function TabTwoScreen() {
       }
     >
       <ThemedView style={styles.container}>
-        <ThemedText type="title" style={{ fontFamily: Fonts.rounded }}>
-          Registrar Producto NFC
-        </ThemedText>
+        <ThemedText type="title">Registrar Producto NFC</ThemedText>
 
         {/* Formulario de entrada */}
         <View style={styles.form}>
