@@ -14,10 +14,9 @@ import {
 
 const { width } = Dimensions.get('window');
 
-// ── Colores Figma ──────────────────────────────────────────────
 const COLORS = {
-  primary: '#E8304A',       // rojo/rosa principal
-  primaryLight: '#FDEAED',  // fondo suave del badge/alerta
+  primary: '#E8304A',
+  primaryLight: '#FDEAED',
   white: '#FFFFFF',
   background: '#F5F5F7',
   cardBg: '#FFFFFF',
@@ -38,8 +37,20 @@ const COLORS = {
 const SALES_TREND = [38, 52, 45, 67, 55, 72, 80]; // 7 días
 
 const TOP_PRODUCTS = [
-  { id: '1', name: 'Coca Cola 600ml', sku: 'SKU:750105530073', sold: 24, price: 'Bs432.00' },
-  { id: '2', name: 'Coca Cola 600ml', sku: 'SKU:750105530073', sold: 24, price: 'Bs432.00' },
+  {
+    id: '1',
+    name: 'Coca Cola 600ml',
+    sku: 'SKU:750105530073',
+    sold: 24,
+    price: 'Bs432.00',
+  },
+  {
+    id: '2',
+    name: 'Coca Cola 600ml',
+    sku: 'SKU:750105530073',
+    sold: 24,
+    price: 'Bs432.00',
+  },
 ];
 
 const STOCK_ALERTS = [
@@ -141,9 +152,21 @@ function ProductRow({ item }: { item: (typeof TOP_PRODUCTS)[0] }) {
 function AlertRow({ item }: { item: (typeof STOCK_ALERTS)[0] }) {
   return (
     <View style={styles.alertRow}>
-      <View style={[styles.alertDot, { backgroundColor: item.critical ? COLORS.red : COLORS.amber }]} />
-      <Text style={styles.alertName} numberOfLines={1}>{item.name}</Text>
-      <Text style={[styles.alertLevel, { color: item.critical ? COLORS.red : COLORS.amber }]}>
+      <View
+        style={[
+          styles.alertDot,
+          { backgroundColor: item.critical ? COLORS.red : COLORS.amber },
+        ]}
+      />
+      <Text style={styles.alertName} numberOfLines={1}>
+        {item.name}
+      </Text>
+      <Text
+        style={[
+          styles.alertLevel,
+          { color: item.critical ? COLORS.red : COLORS.amber },
+        ]}
+      >
         {item.level}
       </Text>
     </View>
@@ -154,7 +177,11 @@ function AlertRow({ item }: { item: (typeof STOCK_ALERTS)[0] }) {
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safe}>
-<StatusBar barStyle="dark-content" backgroundColor="transparent" translucent={true} />
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent={true}
+      />
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
@@ -206,39 +233,39 @@ export default function HomeScreen() {
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Tendencia de Ventas (7 Días)</Text>
             <TouchableOpacity>
-              <IconSymbol name="arrow.up.right.square" size={16} color={COLORS.textMuted} />
+              <IconSymbol
+                name="arrow.up.right.square"
+                size={16}
+                color={COLORS.textMuted}
+              />
             </TouchableOpacity>
           </View>
           <TrendLine />
         </View>
 
         {/* ── Acciones Rápidas ── */}
-  <View style={styles.card}>
-  <Text style={styles.cardTitle}>ACCIONES RÁPIDAS</Text>
-  <View style={styles.actionsRow}>
-    <TouchableOpacity style={styles.actionBtn}>
-      <View style={styles.actionIcon}>
-        <IconSymbol
-          name="dot.radiowaves.left.and.right"
-          size={22}
-          color={COLORS.primary}
-        />
-      </View>
-      <Text style={styles.actionLabel}>Escanear NFC</Text>
-    </TouchableOpacity>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>ACCIONES RÁPIDAS</Text>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity style={styles.actionBtn}>
+              <View style={styles.actionIcon}>
+                <IconSymbol
+                  name="dot.radiowaves.left.and.right"
+                  size={22}
+                  color={COLORS.primary}
+                />
+              </View>
+              <Text style={styles.actionLabel}>Escanear NFC</Text>
+            </TouchableOpacity>
 
-    <TouchableOpacity style={styles.actionBtn}>
-      <View style={styles.actionIcon}>
-        <IconSymbol
-          name="qrcode"
-          size={22}
-          color={COLORS.primary}
-        />
-      </View>
-      <Text style={styles.actionLabel}>Escanear QR</Text>
-    </TouchableOpacity>
-  </View>
-</View>
+            <TouchableOpacity style={styles.actionBtn}>
+              <View style={styles.actionIcon}>
+                <IconSymbol name="qrcode" size={22} color={COLORS.primary} />
+              </View>
+              <Text style={styles.actionLabel}>Escanear QR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
         {/* ── Más Vendidos ── */}
         <View style={styles.card}>
           <SectionTitle title="Más Vendidos" action="Ver todos" />
@@ -251,8 +278,14 @@ export default function HomeScreen() {
         <View style={[styles.card, styles.alertCard]}>
           <View style={styles.alertHeader}>
             <View style={styles.alertTitleRow}>
-              <IconSymbol name="exclamationmark.triangle.fill" size={16} color={COLORS.red} />
-              <Text style={[styles.cardTitle, { marginLeft: 6 }]}>Alertas de Stock</Text>
+              <IconSymbol
+                name="exclamationmark.triangle.fill"
+                size={16}
+                color={COLORS.red}
+              />
+              <Text style={[styles.cardTitle, { marginLeft: 6 }]}>
+                Alertas de Stock
+              </Text>
             </View>
             <View style={styles.alertBadge}>
               <Text style={styles.alertBadgeText}>3</Text>
@@ -270,11 +303,6 @@ export default function HomeScreen() {
 
         <View style={{ height: 24 }} />
       </ScrollView>
-
-      {/* ── FAB ── */}
-      <TouchableOpacity style={styles.fab}>
-        <IconSymbol name="plus" size={26} color={COLORS.white} />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -287,19 +315,20 @@ const styles = StyleSheet.create({
   },
 
   // Header
- header: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  paddingHorizontal: 16,
-  paddingBottom: 12,
-  paddingTop: Platform.OS === 'android'
-    ? (StatusBar.currentHeight ?? 24) + 8  // 👈 empuja justo debajo del status bar
-    : 16,
-  backgroundColor: COLORS.white,
-  borderBottomWidth: 1,
-  borderBottomColor: COLORS.border,
-},
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    paddingTop:
+      Platform.OS === 'android'
+        ? (StatusBar.currentHeight ?? 24) + 8 // 👈 empuja justo debajo del status bar
+        : 16,
+    backgroundColor: COLORS.white,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -392,7 +421,11 @@ const styles = StyleSheet.create({
   statItem: { flex: 1, alignItems: 'center' },
   statValue: { color: COLORS.white, fontSize: 16, fontWeight: '700' },
   statLabel: { color: 'rgba(255,255,255,0.7)', fontSize: 11, marginTop: 2 },
-  statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.25)' },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+  },
 
   // Tarjeta genérica
   card: {

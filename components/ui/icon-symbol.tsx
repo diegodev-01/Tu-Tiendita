@@ -19,18 +19,23 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
 
   // — Home screen —
-  'bell': 'notifications',
+  bell: 'notifications',
   'arrow.up.right.square': 'open-in-new',
 
   // — Acciones rápidas —
-  'dot.radiowaves.left.and.right': 'wifi',   // NFC
-  'qrcode': 'qr-code-scanner',               // QR / Escanear
+  'dot.radiowaves.left.and.right': 'wifi', // NFC
+  qrcode: 'qr-code-scanner', // QR / Escanear
+  'box.truck': 'local-shipping', // Inventario
+  'box.truck.fill': 'local-shipping', // Surtir
+  'plus.circle.fill': 'add-circle', // Agregar producto
+  'chart.bar.fill': 'bar-chart', // Reportes
+  'cube.box': 'inventory', // Productos
 
   // — Alertas —
   'exclamationmark.triangle.fill': 'warning',
 
   // — FAB —
-  'plus': 'add',
+  plus: 'add',
 } as IconMapping;
 
 /**
