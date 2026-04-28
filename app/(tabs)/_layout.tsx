@@ -20,6 +20,7 @@ export default function TabLayout() {
           overflow: 'visible',
           backgroundColor: 'white',
           borderTopWidth: 0,
+          height: 60,
         },
       }}
     >
@@ -86,13 +87,14 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabButton: {
-    top: -25,
+    marginTop: -25,
     width: 60,
     height: 60,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 30,
     backgroundColor: Colors.light.tint,
+    alignSelf: 'center',
   },
   floatingButtonContainer: {
     justifyContent: 'center',

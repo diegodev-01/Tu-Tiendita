@@ -30,6 +30,7 @@ const MAPPING = {
   'plus.circle.fill': 'add-circle', // Agregar producto
   'chart.bar.fill': 'bar-chart', // Reportes
   'cube.box': 'inventory', // Productos
+  'wallet.bifold.fill': 'account-balance-wallet', // Caja
 
   // — Alertas —
   'exclamationmark.triangle.fill': 'warning',
