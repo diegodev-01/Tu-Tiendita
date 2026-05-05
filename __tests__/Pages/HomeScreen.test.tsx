@@ -1,4 +1,4 @@
-import HomeScreen from '@/app/(tabs)/home';
+import HomeScreen from '@/app/(tabs)';
 import { render } from '@testing-library/react-native';
 import React, { ReactNode } from 'react';
 
