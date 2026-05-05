@@ -1,0 +1,18 @@
+export const COLORS = {
+  primary: '#E8304A',
+  primaryLight: '#FDEAED',
+  white: '#FFFFFF',
+  background: '#F5F5F7',
+  cardBg: '#FFFFFF',
+  text: '#1A1A2E',
+  textMuted: '#8A8A9A',
+  textLight: '#B0B0C0',
+  green: '#27AE60',
+  greenLight: '#E8F8F0',
+  red: '#E8304A',
+  redLight: '#FDEAED',
+  amber: '#F5A623',
+  border: '#EBEBF0',
+  chartLine: '#27AE60',
+  tabBg: '#FFFFFF',
+};

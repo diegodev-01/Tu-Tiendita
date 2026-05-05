@@ -23,7 +23,10 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "permissions": ["android.permission.NFC", "android.permission.NFC"],
+      "permissions": [
+        "android.permission.NFC",
+        "android.permission.NFC"
+      ],
       "package": "com.anonymous.Tutiendita"
     },
     "web": {
@@ -49,7 +52,8 @@
         {
           "nfcPermission": "Permitir acceso al NFC para escanear etiquetas de productos"
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
