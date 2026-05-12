@@ -156,6 +156,23 @@ function AlertRow({ item }: { item: (typeof STOCK_ALERTS)[0] }) {
   );
 }
 
+const date = new Date();
+const monthNames = [
+  'Enero',
+  'Febrero',
+  'Marzo',
+  'Abril',
+  'Mayo',
+  'Junio',
+  'Julio',
+  'Agosto',
+  'Septiembre',
+  'Octubre',
+  'Noviembre',
+  'Diciembre',
+];
+const formattedDate = `${date.getDate()} ${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+
 // ── Pantalla principal ─────────────────────────────────────────
 export default function HomeScreen() {
   return (
@@ -173,7 +190,7 @@ export default function HomeScreen() {
           </View>
           <View>
             <Text style={styles.storeName}>Mi Tiendita</Text>
-            <Text style={styles.storeDate}>28 Abr 2026</Text>
+            <Text style={styles.storeDate}>{formattedDate}</Text>
           </View>
         </View>
         <TouchableOpacity style={styles.notifBtn}>

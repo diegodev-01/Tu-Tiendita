@@ -1,207 +1,209 @@
-import * as Crypto from 'expo-crypto';
-import { useState } from 'react';
-import { Alert, Button, StyleSheet, TextInput, View } from 'react-native';
+import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
+import React from 'react';
+import {
+  FlatList,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-// import { Fonts } from '@/constants/theme';
-import { nfcService } from '@/src/services/nfc-service';
+import { COLORS } from '@/src/styles/colors';
 
-interface ProductTag {
-  id: string;
-  name: string;
-  price: string;
-  stock: string;
+interface StatCardProps {
+  iconName: React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+  label: string;
+  value: string;
+  color: string;
 }
 
-export default function TabTwoScreen() {
-  const [isWriting, setIsWriting] = useState(false);
-  const [name, setName] = useState('');
-  const [price, setPrice] = useState('');
-  const [stock, setStock] = useState('');
-  const [history, setHistory] = useState<ProductTag[]>([]);
+const StatCard = ({ iconName, label, value, color }: StatCardProps) => (
+  <View style={styles.statCard}>
+    <View style={styles.statCardHeader}>
+      <MaterialCommunityIcons name={iconName} size={24} color={color} />
+      <Text style={styles.statCardLabel}>{label}</Text>
+    </View>
+    <Text style={styles.statCardValue}>{value}</Text>
+  </View>
+);
 
-  const handleStartWriting = async () => {
-    if (!name || !price || !stock) {
-      Alert.alert(
-        'Campos incompletos',
-        'Por favor llena todos los datos antes de grabar.',
-      );
-      return;
-    }
+interface ProductItemProps {
+  name: string;
+  sku: string;
+  stock: number;
+  shelf: string;
+  status?: 'high' | 'low' | 'out';
+}
 
-    const newId = Crypto.randomUUID();
-
-    const productData = { id: newId, name, price, stock };
-
-    setIsWriting(true);
-    try {
-      await nfcService.init();
-      console.log('Esperando tag...');
-
-      const success = await nfcService.writeProductId(newId);
-
-      if (success) {
-        setHistory((prev) => [productData, ...prev]);
-        Alert.alert('¡Éxito!', `Producto "${name}" grabado correctamente.`);
-        setName('');
-        setPrice('');
-        setStock('');
-      } else {
-        Alert.alert('Error', 'No se pudo escribir en el tag NFC.');
-      }
-    } catch (err) {
-      Alert.alert(
-        'Error de Inicialización',
-        'Asegúrate de tener el NFC encendido.',
-      );
-    } finally {
-      setIsWriting(false);
-    }
-  };
+const ProductItem = ({ name, sku, stock, shelf, status }: ProductItemProps) => {
+  const isOutOfStock = stock === 0;
+  const badgeColor = isOutOfStock
+    ? COLORS.red
+    : stock < 10
+      ? COLORS.amber
+      : COLORS.green;
+  const badgeBg = isOutOfStock
+    ? COLORS.redLight
+    : stock < 10
+      ? COLORS.primaryLight
+      : COLORS.greenLight;
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="tag"
-          style={styles.headerImage}
-        />
-      }
-    >
-      <ThemedView style={styles.container}>
-        <ThemedText type="title">Registrar Producto NFC</ThemedText>
+    <View style={styles.productCard}>
+      <View style={styles.productInfo}>
+        <Text style={styles.productName}>{name}</Text>
+        <Text style={styles.productSkuShelf}>
+          SKU: <Text style={{ fontWeight: '700' }}>{sku}</Text> •
+          <MaterialCommunityIcons name="inbox" size={12} /> {shelf}
+        </Text>
+      </View>
+      <View style={styles.productFooter}>
+        <Text
+          style={[
+            styles.stockValue,
+            { color: isOutOfStock ? COLORS.red : COLORS.text },
+          ]}
+        >
+          {stock} <Text style={{ fontSize: 12 }}>uds</Text>
+        </Text>
+        <View style={[styles.badge, { backgroundColor: badgeBg }]}>
+          <Text style={{ color: badgeColor, fontSize: 12, fontWeight: '600' }}>
+            {isOutOfStock ? 'Agotado' : stock < 10 ? 'Bajo' : 'Alto'}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+};
 
-        {/* Formulario de entrada */}
-        <View style={styles.form}>
-          <TextInput
-            placeholder="Nombre del producto"
-            value={name}
-            onChangeText={setName}
-            style={styles.input}
-            placeholderTextColor="#888"
-          />
-          <TextInput
-            placeholder="Precio ($)"
-            value={price}
-            onChangeText={setPrice}
-            keyboardType="numeric"
-            style={styles.input}
-            placeholderTextColor="#888"
-          />
-          <TextInput
-            placeholder="Stock inicial"
-            value={stock}
-            onChangeText={setStock}
-            keyboardType="numeric"
-            style={styles.input}
-            placeholderTextColor="#888"
-          />
+export default function InventoryScreen() {
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Inventario</Text>
+        <TouchableOpacity style={styles.addButton}>
+          <AntDesign name="plus" size={20} color={COLORS.white} />
+        </TouchableOpacity>
+      </View>
 
-          <Button
-            title={isWriting ? 'Aproxime el Tag...' : 'Grabar ID en Tag'}
-            onPress={handleStartWriting}
-            disabled={isWriting}
-            color="#2196F3"
+      <ScrollView style={styles.content}>
+        <View style={styles.statsContainer}>
+          <StatCard
+            iconName="package-variant"
+            label="Total Prod."
+            value="428"
+            color={COLORS.primary}
+          />
+          <StatCard
+            iconName="alert-circle-outline"
+            label="Bajo Stock"
+            value="12"
+            color={COLORS.amber}
           />
         </View>
 
-        <ThemedView style={styles.historyContainer}>
-          <ThemedText type="subtitle">Historial de Grabación</ThemedText>
-          {history.length === 0 ? (
-            <ThemedText style={styles.emptyText}>
-              No hay productos grabados aún.
-            </ThemedText>
-          ) : (
-            history.map((item) => (
-              <View key={item.id} style={styles.historyItem}>
-                <View style={{ flex: 1 }}>
-                  <ThemedText style={styles.productName}>
-                    {item.name}
-                  </ThemedText>
-                  <ThemedText style={styles.productId}>
-                    ID: {item.id.slice(0, 8)}...
-                  </ThemedText>
-                </View>
-                <View style={{ alignItems: 'flex-end' }}>
-                  <ThemedText style={styles.productPrice}>
-                    ${item.price}
-                  </ThemedText>
-                  <ThemedText style={styles.productStock}>
-                    Cant: {item.stock}
-                  </ThemedText>
-                </View>
-              </View>
-            ))
-          )}
-        </ThemedView>
-      </ThemedView>
-    </ParallaxScrollView>
+        <View style={styles.searchContainer}>
+          <AntDesign name="search" size={20} color={COLORS.textMuted} />
+          <TextInput
+            placeholder="Buscar por nombre o SKU..."
+            style={styles.searchInput}
+          />
+        </View>
+
+        <FlatList
+          data={[
+            {
+              name: 'Coca Cola Regular 600ml',
+              sku: 'CC-600-R',
+              stock: 45,
+              shelf: 'Gaveta A2',
+            },
+            {
+              name: 'Sabritas Sal 40g',
+              sku: 'SAB-40-S',
+              stock: 5,
+              shelf: 'Gaveta B1',
+            },
+            {
+              name: 'Galletas Oreo 114g',
+              sku: 'OR-114',
+              stock: 0,
+              shelf: 'Gaveta C3',
+            },
+          ]}
+          renderItem={({ item }) => <ProductItem {...item} />}
+          keyExtractor={(item) => item.sku}
+          scrollEnabled={false}
+        />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 16,
-    gap: 16,
-  },
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
-  },
-  form: {
-    backgroundColor: 'rgba(128,128,128,0.1)',
-    padding: 16,
-    borderRadius: 12,
-    gap: 10,
-  },
-  input: {
-    backgroundColor: '#fff',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    color: '#000',
-  },
-  historyContainer: {
-    marginTop: 10,
-    gap: 10,
-  },
-  historyItem: {
+  container: { flex: 1, backgroundColor: COLORS.background },
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    paddingTop: 50,
+    backgroundColor: COLORS.white,
+  },
+  headerTitle: { fontSize: 22, fontWeight: 'bold', color: COLORS.text },
+  addButton: { backgroundColor: COLORS.primary, padding: 10, borderRadius: 8 },
+  content: { padding: 20 },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 0.48,
+    backgroundColor: COLORS.cardBg,
+    padding: 15,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  statCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  statCardLabel: { fontSize: 12, color: COLORS.textMuted, marginLeft: 5 },
+  statCardValue: { fontSize: 24, fontWeight: 'bold', color: COLORS.text },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
     padding: 12,
-    backgroundColor: 'rgba(128,128,128,0.05)',
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2196F3',
-    marginBottom: 8,
+    borderRadius: 12,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  productName: {
-    fontWeight: 'bold',
-    fontSize: 16,
+  searchInput: { marginLeft: 10, flex: 1 },
+  productCard: {
+    backgroundColor: COLORS.cardBg,
+    padding: 15,
+    borderRadius: 12,
+    marginBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: COLORS.border,
   },
-  productId: {
-    fontSize: 12,
-    opacity: 0.6,
+  productName: { fontSize: 16, fontWeight: '600', color: COLORS.text },
+  productSkuShelf: { color: COLORS.textMuted, fontSize: 12, marginTop: 4 },
+  productFooter: { alignItems: 'flex-end' },
+  stockValue: { fontSize: 18, fontWeight: 'bold' },
+  badge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 5,
   },
-  productPrice: {
-    fontWeight: 'bold',
-    color: '#4CAF50',
-  },
-  productStock: {
-    fontSize: 12,
-  },
-  emptyText: {
-    fontStyle: 'italic',
-    textAlign: 'center',
-    marginTop: 20,
-    opacity: 0.5,
-  },
+  productInfo: { flex: 1, paddingRight: 10 },
 });
