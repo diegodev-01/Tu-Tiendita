@@ -33,6 +33,7 @@ const MAPPING = {
   'wallet.bifold.fill': 'account-balance-wallet', // Caja
   'arrow.left': 'arrow-back', // Volver atrás
   'arrow.left.square.fill': 'exit-to-app', // Cerrar sesión
+  'checkmark.circle': 'check', // Confirmar acción
 
   // — Alertas —
   'exclamationmark.triangle.fill': 'warning',

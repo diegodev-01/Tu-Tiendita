@@ -12,8 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import { api } from '@/src/services/api/api';
-import { getDashboardData, Product, Alert } from '@/src/services/dashboard-service';
+import { Alert, getDashboardData, Product } from '@/src/services/dashboard-service';
 import { COLORS } from '@/src/styles/colors';
 import { useFocusEffect, useRouter } from 'expo-router';
 
@@ -221,7 +220,7 @@ export default function HomeScreen() {
         </View>
 
         {/* ── Acciones Rápidas ── */}
-        <View style={styles.card}>
+        {/* <View style={styles.card}>
           <Text style={styles.cardTitle}>ACCIONES RÁPIDAS</Text>
           <View style={styles.actionsRow}>
             <TouchableOpacity style={styles.actionBtn}>
@@ -242,7 +241,7 @@ export default function HomeScreen() {
               <Text style={styles.actionLabel}>Escanear QR</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </View> */}
         {/* ── Más Vendidos ── */}
         <View style={styles.card}>
           <SectionTitle title="Más Vendidos" action="Ver todos" />

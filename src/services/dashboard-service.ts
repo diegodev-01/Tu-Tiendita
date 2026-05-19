@@ -47,11 +47,11 @@ export const getDashboardData = async (): Promise<{
   });
 
   const stockAlerts = products
-    .filter((p: any) => p.stock <= p.minStock)
+    .filter((p: any) => p.stock === 0 || p.stock <= p.minStock)
     .map((p: any) => ({
       id: p._id,
       name: p.name,
-      level: `Queda${p.stock === 1 ? '' : 'n'} ${p.stock}`,
+      level: p.stock === 0 ? 'Agotado' : `Queda${p.stock === 1 ? '' : 'n'} ${p.stock}`,
       critical: p.stock === 0,
     }));
 

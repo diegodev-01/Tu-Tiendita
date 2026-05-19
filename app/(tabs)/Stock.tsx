@@ -1,6 +1,8 @@
 import { AntDesign } from '@expo/vector-icons';
-import React from 'react';
+import { useFocusEffect, useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -9,203 +11,173 @@ import {
 } from 'react-native';
 
 import ButtonComponent from '@/components/ui/button';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import {
+  ProductResponse,
+  productService,
+} from '@/src/services/product-service';
 import { COLORS } from '@/src/styles/colors';
-import { useRouter } from 'expo-router';
 
-interface SuggestionCardProps {
-  name: string;
-  shelf: string;
-  actual: number;
-  min: number;
-  suggested: number;
-  status: string;
-  statusColor: string;
-  onAddPress?: () => void;
+const LOW_STOCK_THRESHOLD = 5;
+
+function getStatus(stock: number): { label: string; color: string } {
+  if (stock === 0) return { label: 'Agotado', color: COLORS.primary };
+  if (stock <= 2) return { label: 'Crítico', color: '#F5A623' };
+  return { label: 'Bajo', color: '#F5A623' };
 }
 
-const SuggestionCard = ({
-  name,
-  shelf,
-  actual,
-  min,
-  suggested,
-  status,
-  statusColor,
-  onAddPress,
-}: SuggestionCardProps) => (
-  <View style={styles.card}>
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <View style={[styles.thumb, { backgroundColor: COLORS.primaryLight }]} />
-      <View style={{ flex: 1, marginLeft: 10 }}>
-        <Text style={{ fontWeight: '600', color: COLORS.text }}>{name}</Text>
-        <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>{shelf}</Text>
+interface SuggestionCardProps {
+  product: ProductResponse;
+  onAddPress: () => void;
+}
+
+const SuggestionCard = ({ product, onAddPress }: SuggestionCardProps) => {
+  const { label, color } = getStatus(product.stock);
+  const suggested = Math.max(product.minStock * 2, LOW_STOCK_THRESHOLD * 2);
+
+  return (
+    <View style={styles.card}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View
-          style={[
-            styles.badge,
-            {
-              backgroundColor: COLORS.primaryLight,
-              alignSelf: 'flex-start',
-              marginTop: 4,
-            },
-          ]}
-        >
-          <Text
-            style={{ color: statusColor, fontSize: 10, fontWeight: 'bold' }}
+          style={[styles.thumb, { backgroundColor: COLORS.primaryLight }]}
+        />
+        <View style={{ flex: 1, marginLeft: 10 }}>
+          <Text style={{ fontWeight: '600', color: COLORS.text }}>
+            {product.name}
+          </Text>
+          <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>
+            {product.shelf || 'Sin pasillo asignado'}
+          </Text>
+          <View
+            style={[
+              styles.badge,
+              {
+                backgroundColor: COLORS.primaryLight,
+                alignSelf: 'flex-start',
+                marginTop: 4,
+              },
+            ]}
           >
-            {status}
+            <Text style={{ color, fontSize: 10, fontWeight: 'bold' }}>
+              {label}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.addButton} onPress={onAddPress}>
+          <AntDesign name="plus" size={16} color={COLORS.primary} />
+        </TouchableOpacity>
+      </View>
+      <View style={styles.statsRow}>
+        <View>
+          <Text style={styles.statLabel}>Actual</Text>
+          <Text style={styles.statVal}>{product.stock}</Text>
+        </View>
+        <View>
+          <Text style={styles.statLabel}>Mínimo</Text>
+          <Text style={styles.statVal}>{product.minStock}</Text>
+        </View>
+        <View>
+          <Text style={[styles.statLabel, { color: COLORS.primary }]}>
+            Sugerido
+          </Text>
+          <Text style={[styles.statVal, { color: COLORS.primary }]}>
+            {suggested}
           </Text>
         </View>
       </View>
-      <TouchableOpacity style={styles.addButton} onPress={onAddPress}>
-        <AntDesign name="plus" size={16} color={COLORS.primary} />
-      </TouchableOpacity>
     </View>
-    <View style={styles.statsRow}>
-      <View>
-        <Text style={styles.statLabel}>Actual</Text>
-        <Text style={styles.statVal}>{actual}</Text>
-      </View>
-      <View>
-        <Text style={styles.statLabel}>Mínimo</Text>
-        <Text style={styles.statVal}>{min}</Text>
-      </View>
-      <View>
-        <Text style={[styles.statLabel, { color: COLORS.primary }]}>
-          Sugerido
-        </Text>
-        <Text style={[styles.statVal, { color: COLORS.primary }]}>
-          {suggested}
-        </Text>
-      </View>
-    </View>
-  </View>
-);
+  );
+};
 
 export default function StockScreen() {
   const router = useRouter();
+  const [suggestions, setSuggestions] = useState<ProductResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchLowStock = async () => {
+        try {
+          setLoading(true);
+          const products = await productService.getProducts();
+          const lowStock = products.filter(
+            (p) => p.stock === 0 || p.stock < LOW_STOCK_THRESHOLD,
+          );
+          setSuggestions(lowStock);
+        } catch (error) {
+          console.error('Error al cargar productos con bajo stock:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchLowStock();
+    }, []),
+  );
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ padding: 20 }}>
+        {/* ── Sugerencias de Pedido ── */}
         <View style={styles.titleContainer}>
-          <Text style={styles.sectionTitle}>Sugerencias de Pedido </Text>
+          <Text style={styles.sectionTitle}>Sugerencias de Pedido</Text>
           <ButtonComponent
             title="Nuevo Producto"
-            onPress={() => {
-              router.push({ pathname: '/register-products', params: { mode: 'register' } });
-            }}
+            onPress={() =>
+              router.push({
+                pathname: '/register-products',
+                params: { mode: 'register' },
+              })
+            }
           />
         </View>
-        <ScrollView
-          style={{ maxHeight: 380 }}
-          contentContainerStyle={{ paddingBottom: 10 }}
-        >
-          <SuggestionCard
-            name="Galletas Oreo 114g"
-            shelf="Gaveta C3"
-            actual={0}
-            min={5}
-            suggested={20}
-            status="Agotado"
-            statusColor={COLORS.primary}
-            onAddPress={() => router.push({ pathname: '/register-products', params: { mode: 'refill', sku: '7501055300075' } })}
-          />
-          <SuggestionCard
-            name="Sabritas Sal 40g"
-            shelf="Gaveta B1"
-            actual={3}
-            min={10}
-            suggested={25}
-            status="Crítico"
-            statusColor="#F5A623"
-            onAddPress={() => router.push({ pathname: '/register-products', params: { mode: 'refill', sku: '7501055301111' } })}
-          />
-          <SuggestionCard
-            name="Coca Cola 600ml"
-            shelf="Refrigerador 1"
-            actual={8}
-            min={12}
-            suggested={48}
-            status="Bajo"
-            statusColor="#F5A623"
-            onAddPress={() => router.push({ pathname: '/register-products', params: { mode: 'refill', sku: '7501055302222' } })}
-          />
-        </ScrollView>
 
+        {loading ? (
+          <ActivityIndicator
+            color={COLORS.primary}
+            style={{ marginVertical: 20 }}
+          />
+        ) : suggestions.length === 0 ? (
+          <View style={styles.emptyBox}>
+            <IconSymbol
+              name="checkmark.circle"
+              size={32}
+              color={COLORS.textMuted}
+            />
+            <Text style={styles.emptyText}>
+              ¡Todo en orden! No hay productos con bajo stock.
+            </Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={{ maxHeight: 380 }}
+            contentContainerStyle={{ paddingBottom: 10 }}
+            nestedScrollEnabled
+          >
+            {suggestions.map((product) => (
+              <SuggestionCard
+                key={product._id}
+                product={product}
+                onAddPress={() =>
+                  router.push({
+                    pathname: '/register-products',
+                    params: { mode: 'refill', sku: product.sku },
+                  })
+                }
+              />
+            ))}
+          </ScrollView>
+        )}
+
+        {/* ── Órdenes en Tránsito ── */}
         <Text style={[styles.sectionTitle, { marginTop: 20 }]}>
           Órdenes en Tránsito
         </Text>
-        <ScrollView
-          style={{ maxHeight: 200, width: '100%' }}
-          contentContainerStyle={{ paddingBottom: 10 }}
-          horizontal
-        >
-          <View style={[styles.card, { padding: 15 }]}>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View
-                  style={{
-                    backgroundColor: COLORS.primaryLight,
-                    padding: 8,
-                    borderRadius: 8,
-                  }}
-                >
-                  <AntDesign name="truck" size={16} color={COLORS.primary} />
-                </View>
-                <View style={{ marginLeft: 10 }}>
-                  <Text style={{ fontWeight: 'bold' }}>ORD-2891</Text>
-                  <Text style={{ color: COLORS.textMuted, fontSize: 12 }}>
-                    Proveedor: Bimbo
-                  </Text>
-                </View>
-              </View>
-              <View
-                style={{
-                  backgroundColor: COLORS.primaryLight,
-                  paddingHorizontal: 8,
-                  paddingVertical: 4,
-                  borderRadius: 4,
-                }}
-              >
-                <Text
-                  style={{
-                    color: COLORS.primary,
-                    fontSize: 12,
-                    fontWeight: '600',
-                  }}
-                >
-                  En camino
-                </Text>
-              </View>
-            </View>
-            <View
-              style={{
-                flexDirection: 'row',
-                justifyContent: 'space-around',
-                marginTop: 15,
-              }}
-            >
-              <View style={{ alignItems: 'center' }}>
-                <Text style={styles.statLabel}>Items</Text>
-                <Text style={{ fontWeight: 'bold' }}>5 productos</Text>
-              </View>
-              <View style={{ alignItems: 'center' }}>
-                <Text style={styles.statLabel}>Llegada est.</Text>
-                <Text style={{ fontWeight: 'bold' }}>Hoy, 14:30</Text>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.fullButton}>
-              <Text style={{ color: COLORS.white, fontWeight: 'bold' }}>
-                Revisar Recepción
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+        <View style={styles.emptyBox}>
+          <AntDesign name="inbox" size={32} color={COLORS.textMuted} />
+          <Text style={styles.emptyText}>
+            No hay órdenes en tránsito por el momento.
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -213,15 +185,6 @@ export default function StockScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, paddingBottom: 50 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 50,
-    backgroundColor: COLORS.white,
-  },
-  title: { fontSize: 18, fontWeight: 'bold' },
   card: {
     backgroundColor: COLORS.cardBg,
     padding: 12,
@@ -254,16 +217,21 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
-  fullButton: {
-    backgroundColor: COLORS.primary,
-    padding: 12,
-    borderRadius: 8,
+  badge: { paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4 },
+  emptyBox: {
     alignItems: 'center',
-    marginTop: 15,
+    paddingVertical: 28,
+    gap: 10,
+    backgroundColor: COLORS.cardBg,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginBottom: 10,
   },
-  badge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+  emptyText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
 });

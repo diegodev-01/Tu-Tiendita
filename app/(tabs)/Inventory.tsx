@@ -44,16 +44,22 @@ interface ProductItemProps {
 const ProductItem = ({ name, sku, stock, shelf }: ProductItemProps) => {
   const stockValue = stock ?? 0;
   const isOutOfStock = stockValue === 0;
+  const isCritical = !isOutOfStock && stockValue <= 2;
+  const isLow = !isOutOfStock && !isCritical && stockValue < 5;
+
   const badgeColor = isOutOfStock
     ? COLORS.red
-    : stockValue < 10
-      ? COLORS.amber
-      : COLORS.green;
+    : isCritical
+      ? '#F5A623'
+      : isLow
+        ? COLORS.amber
+        : COLORS.green;
   const badgeBg = isOutOfStock
     ? COLORS.redLight
-    : stockValue < 10
+    : isCritical || isLow
       ? COLORS.primaryLight
       : COLORS.greenLight;
+  const badgeLabel = isOutOfStock ? 'Agotado' : isCritical ? 'Crítico' : isLow ? 'Bajo' : 'OK';
 
   return (
     <View style={styles.productCard}>
@@ -75,7 +81,7 @@ const ProductItem = ({ name, sku, stock, shelf }: ProductItemProps) => {
         </Text>
         <View style={[styles.badge, { backgroundColor: badgeBg }]}>
           <Text style={{ color: badgeColor, fontSize: 12, fontWeight: '600' }}>
-            {isOutOfStock ? 'Agotado' : stockValue < 10 ? 'Bajo' : 'Alto'}
+            {badgeLabel}
           </Text>
         </View>
       </View>
@@ -101,7 +107,7 @@ export default function InventoryScreen() {
 
       const total = fetchedProducts.length;
       const lowStock = fetchedProducts.filter(
-        (p) => p.stock < p.minStock,
+        (p) => p.stock === 0 || p.stock < p.minStock || p.stock < 5,
       ).length;
       setStats({ total, lowStock });
     } catch (error) {
