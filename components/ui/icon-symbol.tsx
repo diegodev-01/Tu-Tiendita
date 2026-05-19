@@ -34,6 +34,7 @@ const MAPPING = {
 
   // — Alertas —
   'exclamationmark.triangle.fill': 'warning',
+  person: 'person', // Perfil
 
   // — FAB —
   plus: 'add',
