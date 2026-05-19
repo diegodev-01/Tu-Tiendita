@@ -15,21 +15,20 @@ import { useAuth } from '@/src/context/auth';
 import { COLORS } from '@/src/styles/colors';
 
 const LoginPage = () => {
-  const [loginData, setLoginData] = useState({ username: '', password: '' });
+  const [loginData, setLoginData] = useState({ email: '', password: '' });
   const { login, isLoading } = useAuth();
 
   const handleLogin = async () => {
-    const { username, password } = loginData;
-    if (!username || !password) {
+    const { email, password } = loginData;
+    if (!email || !password) {
       Alert.alert('Error', 'Por favor llena todos los campos');
       return;
     }
-
     try {
-      await login(username, password);
+      await login(email, password);
     } catch (error) {
       Alert.alert('Error', 'Credenciales inválidas');
-      setLoginData({ username: '', password: '' });
+      setLoginData({ email: '', password: '' });
     }
   };
 
@@ -45,15 +44,13 @@ const LoginPage = () => {
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>Nombre de usuario</Text>
+          <Text style={styles.label}>Correo electrónico</Text>
           <TextInput
             style={styles.input}
-            placeholder="Nombre de usuario"
+            placeholder="Correo electrónico"
             placeholderTextColor={COLORS.textLight}
-            value={loginData.username}
-            onChangeText={(username) =>
-              setLoginData({ ...loginData, username })
-            }
+            value={loginData.email}
+            onChangeText={(email) => setLoginData({ ...loginData, email })}
           />
 
           <Text style={styles.label}>Contraseña</Text>

@@ -38,11 +38,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     bootstrapAsync();
   }, []);
 
-  const login = async (username: string, password: string): Promise<void> => {
+  const login = async (email: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
       const details = new URLSearchParams();
-      details.append('username', username);
+      details.append('username', email);
       details.append('password', password);
 
       const response = await api.post('/auth/login', details, {
