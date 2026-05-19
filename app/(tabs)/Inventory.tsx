@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from 'react-native';
 
@@ -81,13 +80,6 @@ const ProductItem = ({ name, sku, stock, shelf, status }: ProductItemProps) => {
 export default function InventoryScreen() {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Inventario</Text>
-        <TouchableOpacity style={styles.addButton}>
-          <AntDesign name="plus" size={20} color={COLORS.white} />
-        </TouchableOpacity>
-      </View>
-
       <ScrollView style={styles.content}>
         <View style={styles.statsContainer}>
           <StatCard
@@ -143,7 +135,7 @@ export default function InventoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: COLORS.background, paddingBottom: 20 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

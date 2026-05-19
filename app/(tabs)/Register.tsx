@@ -1,7 +1,5 @@
-import * as Crypto from 'expo-crypto';
 import { useState } from 'react';
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -13,6 +11,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 // import { Fonts } from '@/constants/theme';
 import { IconSymbol } from '@/components/ui/icon-symbol';
+import PulseRing from '@/components/ui/pulse-ring';
 import { Colors } from '@/constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -33,7 +32,7 @@ export default function RegisterScreen() {
   const insets = useSafeAreaInsets();
   const [isWriting, setIsWriting] = useState(false);
   // const [history, setHistory] = useState<any[]>([]);
-  const [history, setHistory] = useState<ProductTag[]>([]);
+  // const [history, setHistory] = useState<ProductTag[]>([]);
 
   const subtotal = mockCart
     .reduce((sum, item) => sum + item.price, 0)
@@ -41,47 +40,16 @@ export default function RegisterScreen() {
   const tax = (parseFloat(subtotal) * 0.16).toFixed(2);
   const total = (parseFloat(subtotal) + parseFloat(tax)).toFixed(2);
 
-  const handleStartWriting = async () => {
-    const newId = Crypto.randomUUID();
-    setIsWriting(true);
-    try {
-      // Simulación de escritura por ahora
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      Alert.alert('¡Éxito!', `Tag NFC grabado correctamente.`);
-    } catch (err) {
-      Alert.alert(
-        'Error de Inicialización',
-        'Asegúrate de tener el NFC encendido.',
-      );
-    } finally {
-      setIsWriting(false);
-    }
-  };
   return (
     <ThemedView style={[styles.mainContainer, { paddingTop: insets.top }]}>
-      {/* 1. Cabecera Estilo Imagen */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.headerIcon}>
-          <IconSymbol size={24} name="chevron.left" color="#888" />
-        </TouchableOpacity>
-        <ThemedText style={styles.headerTitle} type="subtitle">
-          Escanear Producto
-        </ThemedText>
-        <TouchableOpacity style={styles.headerIcon}>
-          <IconSymbol size={24} name="calendar" color="#888" />
-        </TouchableOpacity>
-      </View>
-
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* 2. Sección del Anillo NFC (Simulación) */}
         <View style={styles.nfcContainer}>
-          <View style={styles.nfcCircleOuter}>
+          <View style={styles.nfcWaveWrapper}>
+            <PulseRing delay={0} />
+            <PulseRing delay={800} />
+            <PulseRing delay={1600} />
             <View style={styles.nfcCircleInner}>
-              <IconSymbol
-                size={48}
-                name="arrow.triangle.2.circlepath"
-                color="white"
-              />
+              <IconSymbol size={48} name="cart" color="white" />
             </View>
           </View>
           <ThemedText style={styles.nfcTitle} type="subtitle">
@@ -93,7 +61,6 @@ export default function RegisterScreen() {
           </ThemedText>
         </View>
 
-        {/* 3. Buscador */}
         <View style={styles.searchBar}>
           <IconSymbol size={20} name="magnifyingglass" color="#aaa" />
           <TextInput
@@ -103,7 +70,6 @@ export default function RegisterScreen() {
           />
         </View>
 
-        {/* 4. Lista de Carrito */}
         <View style={styles.cartSection}>
           <View style={styles.cartHeader}>
             <ThemedText style={styles.cartTitle} type="subtitle">
@@ -116,7 +82,6 @@ export default function RegisterScreen() {
             </View>
           </View>
 
-          {/* Renderizado de la lista simulada */}
           {mockCart.map((item) => (
             <View key={item.id} style={styles.productCard}>
               <View style={styles.productIcon}>
@@ -130,12 +95,10 @@ export default function RegisterScreen() {
               </View>
             </View>
           ))}
-          {/* Espacio extra al final para que el scroll no choque con el carrito */}
           <View style={{ height: 180 }} />
         </View>
       </ScrollView>
 
-      {/* 5. Carrito Flotante Inferior */}
       <View style={[styles.floatingCart, { paddingBottom: insets.bottom }]}>
         <View style={styles.cartRows}>
           <View style={styles.priceRow}>
@@ -154,7 +117,7 @@ export default function RegisterScreen() {
 
         <TouchableOpacity
           style={styles.paymentButton}
-          onPress={handleStartWriting}
+          // onPress={}
           disabled={isWriting}
         >
           <IconSymbol size={20} name="wallet.bifold.fill" color="white" />
@@ -170,7 +133,8 @@ export default function RegisterScreen() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#F8F9FA', // Un blanco roto muy suave
+    backgroundColor: '#F8F9FA',
+    paddingBottom: 50,
   },
   header: {
     flexDirection: 'row',
@@ -205,6 +169,13 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 10,
     paddingHorizontal: 16,
+  },
+  nfcWaveWrapper: {
+    width: 200,
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
   },
   nfcCircleOuter: {
     width: 140,

@@ -35,6 +35,7 @@ const MAPPING = {
   // — Alertas —
   'exclamationmark.triangle.fill': 'warning',
   person: 'person', // Perfil
+  cart: 'shopping-cart', // Carrito
 
   // — FAB —
   plus: 'add',

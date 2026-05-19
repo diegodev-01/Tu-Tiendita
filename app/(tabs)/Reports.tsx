@@ -1,4 +1,4 @@
-import { AntDesign, Feather, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
 import React from 'react';
 import {
   Dimensions,
@@ -109,20 +109,6 @@ const SaleItem = ({
 export default function ReportesScreen() {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity>
-          <AntDesign name="arrow-left" size={24} color={COLORS.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Reportes</Text>
-        <TouchableOpacity>
-          <MaterialCommunityIcons
-            name="account-circle-outline"
-            size={28}
-            color={COLORS.text}
-          />
-        </TouchableOpacity>
-      </View>
-
       <ScrollView showsVerticalScrollIndicator={false}>
         <ScrollView
           horizontal
@@ -239,7 +225,7 @@ export default function ReportesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: COLORS.background, paddingBottom: 50 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',

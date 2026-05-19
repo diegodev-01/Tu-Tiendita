@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 
+import ButtonComponent from '@/components/ui/button';
 import { COLORS } from '@/src/styles/colors';
 
 interface SuggestionCardProps {
@@ -80,19 +81,11 @@ const SuggestionCard = ({
 export default function StockScreen() {
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <AntDesign name="arrow-left" size={24} color={COLORS.text} />
-        <Text style={styles.title}>Surtir Stock</Text>
-        <AntDesign name="clock-circle" size={20} color={COLORS.text} />
-      </View>
-
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        <Text style={styles.sectionTitle}>
-          Sugerencias de Pedido{' '}
-          <Text style={{ color: COLORS.textMuted, fontWeight: '400' }}>
-            12 items críticos
-          </Text>
-        </Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.sectionTitle}>Sugerencias de Pedido </Text>
+          <ButtonComponent title="Nuevo Producto" onPress={() => {}} />{' '}
+        </View>
 
         <SuggestionCard
           name="Galletas Oreo 114g"
@@ -197,7 +190,7 @@ export default function StockScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background },
+  container: { flex: 1, backgroundColor: COLORS.background, paddingBottom: 50 },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -231,6 +224,12 @@ const styles = StyleSheet.create({
   },
   statLabel: { color: COLORS.textMuted, fontSize: 11 },
   statVal: { fontWeight: 'bold', fontSize: 14, marginTop: 2 },
+  titleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
   fullButton: {
     backgroundColor: COLORS.primary,
