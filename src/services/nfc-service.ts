@@ -1,4 +1,7 @@
-import NfcManager, { Ndef, NfcTech } from 'react-native-nfc-manager';
+import NfcManager, {
+  Ndef,
+  NfcTech
+} from 'react-native-nfc-manager';
 
 export const nfcService = {
   init: async () => {
@@ -6,6 +9,23 @@ export const nfcService = {
     if (!isSupported) throw new Error('NFC no soportado en este dispositivo');
 
     await NfcManager.start();
+  },
+
+  readTagId: async (): Promise<string | null> => {
+    try {
+      const tech = await NfcManager.requestTechnology([
+        NfcTech.Ndef,
+        NfcTech.NfcA,
+        NfcTech.IsoDep,
+      ]);
+      const tag = await NfcManager.getTag();
+      return tag?.id || null;
+    } catch (error) {
+      console.warn('Error leyendo tag:', error);
+      return null;
+    } finally {
+      await NfcManager.cancelTechnologyRequest();
+    }
   },
 
   writeProductId: async (uniqueId: string) => {

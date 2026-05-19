@@ -46,6 +46,10 @@ function InitialLayout() {
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         <Stack.Screen name="profile" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="register-products"
+          options={{ headerShown: false }}
+        />
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>

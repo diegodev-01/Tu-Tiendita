@@ -27,7 +27,7 @@ export default function TabTwoScreen() {
       Alert.alert(
         'Campos incompletos',
         'Por favor llena todos los datos antes de grabar.',
-      );
+      ); 
       return;
     }
 

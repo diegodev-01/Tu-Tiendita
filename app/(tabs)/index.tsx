@@ -1,6 +1,7 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
-import React from 'react';
+import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Dimensions,
   SafeAreaView,
   ScrollView,
@@ -11,36 +12,15 @@ import {
   View,
 } from 'react-native';
 
+import { api } from '@/src/services/api/api';
+import { getDashboardData, Product, Alert } from '@/src/services/dashboard-service';
 import { COLORS } from '@/src/styles/colors';
+import { useFocusEffect, useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 
-// ── Datos mock ─────────────────────────────────────────────────
-const SALES_TREND = [38, 52, 45, 67, 55, 72, 80]; // 7 días
+const SALES_TREND = [38, 52, 45, 67, 55, 72, 80];
 
-const TOP_PRODUCTS = [
-  {
-    id: '1',
-    name: 'Coca Cola 600ml',
-    sku: 'SKU:750105530073',
-    sold: 24,
-    price: 'Bs432.00',
-  },
-  {
-    id: '2',
-    name: 'Coca Cola 600ml',
-    sku: 'SKU:750105530073',
-    sold: 24,
-    price: 'Bs432.00',
-  },
-];
-
-const STOCK_ALERTS = [
-  { id: '1', name: 'Leche Entera Pil 1L', level: 'Queda 1', critical: true },
-  { id: '2', name: 'Leche Entera Pil 1L', level: 'Quedan 2', critical: false },
-];
-
-// ── Mini línea de tendencia SVG-like con View ──────────────────
 function TrendLine() {
   const points = SALES_TREND;
   const max = Math.max(...points);
@@ -49,7 +29,6 @@ function TrendLine() {
   const chartH = 48;
   const stepX = chartW / (points.length - 1);
 
-  // Convertir puntos a coordenadas
   const coords = points.map((v, i) => ({
     x: i * stepX,
     y: chartH - ((v - min) / (max - min)) * chartH,
@@ -57,7 +36,6 @@ function TrendLine() {
 
   return (
     <View style={{ height: chartH + 8, marginTop: 8 }}>
-      {/* Línea conectando puntos usando Views posicionados */}
       {coords.map((pt, i) => {
         if (i === coords.length - 1) return null;
         const next = coords[i + 1];
@@ -82,7 +60,6 @@ function TrendLine() {
           />
         );
       })}
-      {/* Puntos */}
       {coords.map((pt, i) => (
         <View
           key={`dot-${i}`}
@@ -101,7 +78,6 @@ function TrendLine() {
   );
 }
 
-// ── Componentes ────────────────────────────────────────────────
 function SectionTitle({ title, action }: { title: string; action?: string }) {
   return (
     <View style={styles.sectionHeader}>
@@ -115,7 +91,7 @@ function SectionTitle({ title, action }: { title: string; action?: string }) {
   );
 }
 
-function ProductRow({ item }: { item: (typeof TOP_PRODUCTS)[0] }) {
+function ProductRow({ item }: { item: Product }) {
   return (
     <View style={styles.productRow}>
       {/* Ícono de producto (cuadrado de color) */}
@@ -131,7 +107,7 @@ function ProductRow({ item }: { item: (typeof TOP_PRODUCTS)[0] }) {
   );
 }
 
-function AlertRow({ item }: { item: (typeof STOCK_ALERTS)[0] }) {
+function AlertRow({ item }: { item: Alert }) {
   return (
     <View style={styles.alertRow}>
       <View
@@ -157,6 +133,36 @@ function AlertRow({ item }: { item: (typeof STOCK_ALERTS)[0] }) {
 
 // ── Pantalla principal ─────────────────────────────────────────
 export default function HomeScreen() {
+  const router = useRouter();
+  const [dailySummary, setDailySummary] = useState({
+    totalVentasMonto: 0,
+    numeroVentas: 0,
+    promedioPorVenta: 0,
+  });
+  const [topProducts, setTopProducts] = useState<Product[]>([]);
+  const [stockAlerts, setStockAlerts] = useState<Alert[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const data = await getDashboardData();
+      setDailySummary(data.dailySummary);
+      setTopProducts(data.topProducts);
+      setStockAlerts(data.stockAlerts);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchData();
+    }, [])
+  );
+
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar
@@ -164,35 +170,40 @@ export default function HomeScreen() {
         backgroundColor="transparent"
         translucent={true}
       />
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* ── Resumen de Hoy ── */}
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryTop}>
-            <Text style={styles.summaryLabel}>RESUMEN DE HOY</Text>
-            <View style={styles.trendBadge}>
-              <Text style={styles.trendBadgeText}>+12% vs ayer</Text>
-            </View>
-          </View>
-
-          <Text style={styles.totalAmount}>Bs4,250.00</Text>
-          <Text style={styles.summarySubtitle}>Ventas Totales</Text>
-
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>84</Text>
-              <Text style={styles.statLabel}>Transacciones</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>Bs50.50</Text>
-              <Text style={styles.statLabel}>Promedio por día</Text>
-            </View>
-          </View>
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={COLORS.primary} />
         </View>
+      ) : (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* ── Resumen de Hoy ── */}
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryTop}>
+              <Text style={styles.summaryLabel}>RESUMEN DE HOY</Text>
+              <View style={styles.trendBadge}>
+                <Text style={styles.trendBadgeText}>+12% vs ayer</Text>
+              </View>
+            </View>
+
+            <Text style={styles.totalAmount}>Bs{dailySummary.totalVentasMonto.toFixed(2)}</Text>
+            <Text style={styles.summarySubtitle}>Ventas Totales</Text>
+
+            <View style={styles.statsRow}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{dailySummary.numeroVentas}</Text>
+                <Text style={styles.statLabel}>Transacciones</Text>
+              </View>
+              <View style={styles.statDivider} />
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>Bs{dailySummary.promedioPorVenta.toFixed(2)}</Text>
+                <Text style={styles.statLabel}>Promedio por día</Text>
+              </View>
+            </View>
+          </View>
 
         {/* ── Tendencia 7 días ── */}
         <View style={styles.card}>
@@ -235,9 +246,11 @@ export default function HomeScreen() {
         {/* ── Más Vendidos ── */}
         <View style={styles.card}>
           <SectionTitle title="Más Vendidos" action="Ver todos" />
-          {TOP_PRODUCTS.map((item) => (
-            <ProductRow key={item.id} item={item} />
-          ))}
+          {topProducts.length === 0 ? (
+            <Text style={{ color: COLORS.textMuted, fontSize: 13 }}>No hay ventas registradas hoy.</Text>
+          ) : (
+            topProducts.map((item) => <ProductRow key={item.id} item={item} />)
+          )}
         </View>
 
         {/* ── Alertas de Stock ── */}
@@ -254,26 +267,33 @@ export default function HomeScreen() {
               </Text>
             </View>
             <View style={styles.alertBadge}>
-              <Text style={styles.alertBadgeText}>3</Text>
+              <Text style={styles.alertBadgeText}>{stockAlerts.length}</Text>
             </View>
           </View>
 
-          {STOCK_ALERTS.map((item) => (
-            <AlertRow key={item.id} item={item} />
-          ))}
+          {stockAlerts.length === 0 ? (
+            <Text style={{ color: COLORS.textMuted, fontSize: 13, marginBottom: 8 }}>
+              No hay alertas de stock.
+            </Text>
+          ) : (
+            stockAlerts.map((item) => <AlertRow key={item.id} item={item} />)
+          )}
 
-          <TouchableOpacity style={styles.repoBtn}>
+          <TouchableOpacity
+            style={styles.repoBtn}
+            onPress={() => router.push('/(tabs)/Inventory')}
+          >
             <Text style={styles.repoBtnText}>→ Ir a Reposición</Text>
           </TouchableOpacity>
         </View>
 
         <View style={{ height: 24 }} />
-      </ScrollView>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
-// ── Estilos ────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   safe: {
     flex: 1,

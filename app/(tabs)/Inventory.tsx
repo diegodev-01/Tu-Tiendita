@@ -1,14 +1,19 @@
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
-import React from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 
+import {
+  ProductResponse,
+  productService,
+} from '@/src/services/product-service';
 import { COLORS } from '@/src/styles/colors';
 
 interface StatCardProps {
@@ -36,16 +41,17 @@ interface ProductItemProps {
   status?: 'high' | 'low' | 'out';
 }
 
-const ProductItem = ({ name, sku, stock, shelf, status }: ProductItemProps) => {
-  const isOutOfStock = stock === 0;
+const ProductItem = ({ name, sku, stock, shelf }: ProductItemProps) => {
+  const stockValue = stock ?? 0;
+  const isOutOfStock = stockValue === 0;
   const badgeColor = isOutOfStock
     ? COLORS.red
-    : stock < 10
+    : stockValue < 10
       ? COLORS.amber
       : COLORS.green;
   const badgeBg = isOutOfStock
     ? COLORS.redLight
-    : stock < 10
+    : stockValue < 10
       ? COLORS.primaryLight
       : COLORS.greenLight;
 
@@ -54,7 +60,7 @@ const ProductItem = ({ name, sku, stock, shelf, status }: ProductItemProps) => {
       <View style={styles.productInfo}>
         <Text style={styles.productName}>{name}</Text>
         <Text style={styles.productSkuShelf}>
-          SKU: <Text style={{ fontWeight: '700' }}>{sku}</Text> •
+          SKU: <Text style={{ fontWeight: '700' }}>{sku}</Text> •{' '}
           <MaterialCommunityIcons name="inbox" size={12} /> {shelf}
         </Text>
       </View>
@@ -65,11 +71,11 @@ const ProductItem = ({ name, sku, stock, shelf, status }: ProductItemProps) => {
             { color: isOutOfStock ? COLORS.red : COLORS.text },
           ]}
         >
-          {stock} <Text style={{ fontSize: 12 }}>uds</Text>
+          {stockValue} <Text style={{ fontSize: 12 }}>uds</Text>
         </Text>
         <View style={[styles.badge, { backgroundColor: badgeBg }]}>
           <Text style={{ color: badgeColor, fontSize: 12, fontWeight: '600' }}>
-            {isOutOfStock ? 'Agotado' : stock < 10 ? 'Bajo' : 'Alto'}
+            {isOutOfStock ? 'Agotado' : stockValue < 10 ? 'Bajo' : 'Alto'}
           </Text>
         </View>
       </View>
@@ -78,64 +84,114 @@ const ProductItem = ({ name, sku, stock, shelf, status }: ProductItemProps) => {
 };
 
 export default function InventoryScreen() {
+  const [products, setProducts] = useState<ProductResponse[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<ProductResponse[]>(
+    [],
+  );
+  const [stats, setStats] = useState({ total: 0, lowStock: 0 });
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const fetchInventory = useCallback(async () => {
+    try {
+      setLoading(true);
+      const fetchedProducts = await productService.getProducts();
+      setProducts(fetchedProducts);
+      setFilteredProducts(fetchedProducts);
+
+      const total = fetchedProducts.length;
+      const lowStock = fetchedProducts.filter(
+        (p) => p.stock < p.minStock,
+      ).length;
+      setStats({ total, lowStock });
+    } catch (error) {
+      console.error('Error fetching inventory:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchInventory();
+    }, [fetchInventory]),
+  );
+
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query) {
+      const lowercasedQuery = query.toLowerCase();
+      const filteredData = products.filter(
+        (item) =>
+          item.name.toLowerCase().includes(lowercasedQuery) ||
+          item.sku.toLowerCase().includes(lowercasedQuery),
+      );
+      setFilteredProducts(filteredData);
+    } else {
+      setFilteredProducts(products);
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content}>
-        <View style={styles.statsContainer}>
-          <StatCard
-            iconName="package-variant"
-            label="Total Prod."
-            value="428"
-            color={COLORS.primary}
-          />
-          <StatCard
-            iconName="alert-circle-outline"
-            label="Bajo Stock"
-            value="12"
-            color={COLORS.amber}
-          />
-        </View>
-
-        <View style={styles.searchContainer}>
-          <AntDesign name="search" size={20} color={COLORS.textMuted} />
-          <TextInput
-            placeholder="Buscar por nombre o SKU..."
-            style={styles.searchInput}
-          />
-        </View>
-
-        <FlatList
-          data={[
-            {
-              name: 'Coca Cola Regular 600ml',
-              sku: 'CC-600-R',
-              stock: 45,
-              shelf: 'Gaveta A2',
-            },
-            {
-              name: 'Sabritas Sal 40g',
-              sku: 'SAB-40-S',
-              stock: 5,
-              shelf: 'Gaveta B1',
-            },
-            {
-              name: 'Galletas Oreo 114g',
-              sku: 'OR-114',
-              stock: 0,
-              shelf: 'Gaveta C3',
-            },
-          ]}
-          renderItem={({ item }) => <ProductItem {...item} />}
-          keyExtractor={(item) => item.sku}
-          scrollEnabled={false}
+      <View style={styles.statsContainer}>
+        <StatCard
+          iconName="package-variant"
+          label="Total Prod."
+          value={stats.total.toString()}
+          color={COLORS.primary}
         />
-      </ScrollView>
+        <StatCard
+          iconName="alert-circle-outline"
+          label="Bajo Stock"
+          value={stats.lowStock.toString()}
+          color={COLORS.amber}
+        />
+      </View>
+
+      <View style={styles.searchContainer}>
+        <AntDesign name="search" size={20} color={COLORS.textMuted} />
+        <TextInput
+          placeholder="Buscar por nombre o SKU..."
+          style={styles.searchInput}
+          value={searchQuery}
+          onChangeText={handleSearch}
+        />
+      </View>
+
+      <FlatList
+        data={filteredProducts}
+        renderItem={({ item }) => <ProductItem {...item} />}
+        keyExtractor={(item) => item._id}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>No se encontraron productos.</Text>
+        }
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: COLORS.background, paddingBottom: 20 },
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    padding: 20,
+    paddingBottom: 0,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -145,7 +201,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 22, fontWeight: 'bold', color: COLORS.text },
   addButton: { backgroundColor: COLORS.primary, padding: 10, borderRadius: 8 },
-  content: { padding: 20 },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -198,4 +253,10 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   productInfo: { flex: 1, paddingRight: 10 },
+  emptyText: {
+    textAlign: 'center',
+    marginTop: 50,
+    color: COLORS.textMuted,
+    fontSize: 16,
+  },
 });
