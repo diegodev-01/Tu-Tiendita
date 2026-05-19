@@ -1,6 +1,6 @@
 import { COLORS } from '@/src/styles/colors';
 import { formattedDate } from '@/src/utils/date';
-import { useSegments } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { IconSymbol } from './icon-symbol';
 const Header = () => {
   const insets = useSafeAreaInsets();
   const segments = useSegments();
+  const router = useRouter();
 
   const currentTab = segments[1] || 'index';
 
@@ -45,7 +46,12 @@ const Header = () => {
           <IconSymbol name="bell" size={20} color={COLORS.text} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.profileBtn}>
+        <TouchableOpacity
+          style={styles.profileBtn}
+          onPress={() => {
+            router.push('/profile');
+          }}
+        >
           <IconSymbol name="person" size={22} color={COLORS.text} />
         </TouchableOpacity>
       </View>
@@ -74,6 +80,7 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 12,
   },
   storeBadge: {
     width: 38,

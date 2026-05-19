@@ -31,6 +31,8 @@ const MAPPING = {
   'chart.bar.fill': 'bar-chart', // Reportes
   'cube.box': 'inventory', // Productos
   'wallet.bifold.fill': 'account-balance-wallet', // Caja
+  'arrow.left': 'arrow-back', // Volver atrás
+  'arrow.left.square.fill': 'exit-to-app', // Cerrar sesión
 
   // — Alertas —
   'exclamationmark.triangle.fill': 'warning',
