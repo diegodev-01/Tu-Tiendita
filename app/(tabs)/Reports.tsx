@@ -1,223 +1,189 @@
 import { Feather, MaterialCommunityIcons } from '@expo/vector-icons';
-import React from 'react';
+import { useFocusEffect } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
-  Dimensions,
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 
+import { reportService, DailyDetail, DailySummary } from '@/src/services/report-service';
 import { COLORS } from '@/src/styles/colors';
 
-const { width } = Dimensions.get('window');
+type Period = 'hoy' | 'semana' | 'mes';
 
-interface TimeTabProps {
-  label: string;
-  active?: boolean;
-  isLast?: boolean;
+const PERIODS: { key: Period; label: string }[] = [
+  { key: 'hoy', label: 'Hoy' },
+  { key: 'semana', label: 'Semana' },
+  { key: 'mes', label: 'Mes' },
+];
+
+const METHOD_LABEL: Record<string, string> = {
+  efectivo: 'Efectivo',
+  qr: 'Pago QR',
+};
+
+function formatTime(isoDate: string): string {
+  try {
+    const d = new Date(isoDate);
+    return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '--:--';
+  }
 }
 
-interface MiniMetricProps {
-  label: string;
-  value: string;
-  trend: string;
+function formatDate(isoDate: string): string {
+  try {
+    const d = new Date(isoDate);
+    return d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+  } catch {
+    return '---';
+  }
 }
 
-interface SaleItemProps {
-  folio: string;
-  time: string;
-  items: string;
-  method: string;
-  amount: string;
-  status: string;
+interface SaleCardProps {
+  item: DailyDetail;
+  index: number;
 }
 
-const TimeTab = ({ label, active, isLast }: TimeTabProps) => (
-  <TouchableOpacity style={[styles.timeTab, active && styles.timeTabActive]}>
-    {label === 'Personalizado' && (
-      <Feather
-        name="calendar"
-        size={14}
-        color={active ? COLORS.white : COLORS.textMuted}
-        style={{ marginRight: 4 }}
-      />
-    )}
-    <Text style={[styles.timeTabText, active && styles.timeTabTextActive]}>
-      {label}
-    </Text>
-  </TouchableOpacity>
-);
-
-const MiniMetric = ({
-  label,
-  value,
-  trend,
-}: {
-  label: string;
-  value: string;
-  trend: string;
-}) => (
-  <View style={styles.miniCard}>
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <MaterialCommunityIcons
-        name="tag-outline"
-        size={16}
-        color={COLORS.primary}
-      />
-      <Text style={styles.miniLabel}>{label}</Text>
-    </View>
-    <Text style={styles.miniValue}>{value}</Text>
-    <Text style={styles.trendText}>▲ {trend}</Text>
-  </View>
-);
-
-const SaleItem = ({
-  folio,
-  time,
-  items,
-  method,
-  amount,
-  status,
-}: SaleItemProps) => (
+const SaleCard = ({ item, index }: SaleCardProps) => (
   <View style={styles.saleCard}>
     <View style={styles.saleHeader}>
-      <Text style={styles.saleTime}>{time}</Text>
+      <Text style={styles.saleTime}>
+        {formatDate(item.fecha)}, {formatTime(item.fecha)}
+      </Text>
       <View style={styles.statusBadge}>
-        <Text style={styles.statusText}>{status}</Text>
+        <Text style={styles.statusText}>Completado</Text>
       </View>
     </View>
     <View style={styles.saleBody}>
       <View>
-        <Text style={styles.saleFolio}>{folio}</Text>
+        <Text style={styles.saleFolio}>TXN-{String(index + 1).padStart(4, '0')}</Text>
         <Text style={styles.saleDetails}>
-          {items} items • {method}
+          {item.itemCount ?? '?'} items • {METHOD_LABEL[item.paymentMethod] ?? item.paymentMethod}
         </Text>
-        <View style={styles.itemThumbs}>
-          <View style={styles.thumbPlaceholder} />
-          <View style={styles.thumbPlaceholder} />
-          <View style={styles.thumbPlaceholder} />
-        </View>
       </View>
-      <Text style={styles.saleAmount}>${amount}</Text>
+      <Text style={styles.saleAmount}>Bs{(item.totalAmount ?? 0).toFixed(2)}</Text>
     </View>
   </View>
 );
 
 export default function ReportesScreen() {
+  const [period, setPeriod] = useState<Period>('hoy');
+  const [summary, setSummary] = useState<DailySummary | null>(null);
+  const [details, setDetails] = useState<DailyDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [sum, det] = await Promise.all([
+        reportService.getDailySummary(),
+        reportService.getDailyDetails(),
+      ]);
+      setSummary(sum);
+      setDetails(det);
+    } catch (err) {
+      console.error('Error cargando reportes:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useFocusEffect(useCallback(() => { fetchData(); }, [fetchData]));
+
+  const ticketPromedio = summary?.promedioPorVenta ?? 0;
+
   return (
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.tabsScroll}
-        >
-          <TimeTab label="Hoy" />
-          <TimeTab label="Semana" active />
-          <TimeTab label="Mes" />
-          <TimeTab label="Personalizado" />
+        {/* ── Tabs de período ── */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabsScroll}>
+          {PERIODS.map((p) => (
+            <TouchableOpacity
+              key={p.key}
+              style={[styles.timeTab, period === p.key && styles.timeTabActive]}
+              onPress={() => setPeriod(p.key)}
+            >
+              <Text style={[styles.timeTabText, period === p.key && styles.timeTabTextActive]}>
+                {p.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
 
         <View style={styles.content}>
-          {/* Card Principal - Ventas Totales */}
-          <View style={styles.mainCard}>
-            <View style={styles.mainCardHeader}>
-              <View style={styles.iconCircle}>
-                <MaterialCommunityIcons
-                  name="trending-up"
-                  size={20}
-                  color={COLORS.primary}
-                />
-              </View>
-              <Text style={styles.mainCardTitle}>Ventas Totales</Text>
-              <Feather name="info" size={16} color={COLORS.textLight} />
-            </View>
-            <View style={styles.mainValueRow}>
-              <Text style={styles.mainValue}>$24,500.00</Text>
-              <View style={styles.mainTrendBadge}>
-                <Text style={styles.mainTrendText}>+ 12%</Text>
-              </View>
-            </View>
-            <Text style={styles.comparisonText}>
-              vs. $21,875.00 semana pasada
-            </Text>
-          </View>
-
-          {/* Grid de métricas secundarias */}
-          <View style={styles.metricsGrid}>
-            <MiniMetric label="Ticket Promedio" value="$185.50" trend="4.2%" />
-            <MiniMetric label="Margen Est." value="32.4%" trend="1.2%" />
-          </View>
-
-          {/* Sección de Gráfico */}
-          <View style={styles.chartCard}>
-            <View style={styles.chartHeader}>
-              <Text style={styles.chartTitle}>Ingresos por Día</Text>
-              <View style={styles.legend}>
-                <View
-                  style={[styles.dot, { backgroundColor: COLORS.primary }]}
-                />
-                <Text style={styles.legendText}>Actual</Text>
-                <View
-                  style={[
-                    styles.dot,
-                    { backgroundColor: COLORS.textLight, marginLeft: 10 },
-                  ]}
-                />
-                <Text style={styles.legendText}>Anterior</Text>
-              </View>
-            </View>
-            {/* Simulación visual de gráfico */}
-            <View style={styles.chartPlaceholder}>
-              <View style={styles.chartLineMock} />
-              <View style={styles.chartXAxis}>
-                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-                  <Text key={i} style={styles.xAxisText}>
-                    {d}
+          {loading ? (
+            <ActivityIndicator color={COLORS.primary} style={{ marginTop: 40 }} />
+          ) : (
+            <>
+              {/* ── Card principal: Ventas Totales ── */}
+              <View style={styles.mainCard}>
+                <View style={styles.mainCardHeader}>
+                  <View style={styles.iconCircle}>
+                    <MaterialCommunityIcons name="trending-up" size={20} color={COLORS.primary} />
+                  </View>
+                  <Text style={styles.mainCardTitle}>Ventas Totales</Text>
+                  <TouchableOpacity onPress={fetchData}>
+                    <Feather name="refresh-cw" size={16} color={COLORS.textLight} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.mainValueRow}>
+                  <Text style={styles.mainValue}>
+                    Bs{(summary?.totalVentasMonto ?? 0).toFixed(2)}
                   </Text>
-                ))}
+                </View>
+                <Text style={styles.comparisonText}>
+                  {summary?.numeroVentas ?? 0} transacciones registradas
+                </Text>
               </View>
-            </View>
-          </View>
 
-          {/* Detalle de Ventas */}
-          <View style={styles.salesSection}>
-            <View style={styles.salesHeaderRow}>
-              <Text style={styles.sectionTitle}>Detalle de Ventas</Text>
-              <TouchableOpacity style={styles.filterBtn}>
-                <Feather name="filter" size={14} color={COLORS.primary} />
-                <Text style={styles.filterBtnText}>Filtros</Text>
-              </TouchableOpacity>
-            </View>
+              {/* ── Grid métricas secundarias ── */}
+              <View style={styles.metricsGrid}>
+                <View style={styles.miniCard}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="tag-outline" size={16} color={COLORS.primary} />
+                    <Text style={styles.miniLabel}>Ticket Promedio</Text>
+                  </View>
+                  <Text style={styles.miniValue}>Bs{ticketPromedio.toFixed(2)}</Text>
+                </View>
+                <View style={styles.miniCard}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialCommunityIcons name="receipt" size={16} color={COLORS.primary} />
+                    <Text style={styles.miniLabel}>Transacciones</Text>
+                  </View>
+                  <Text style={styles.miniValue}>{summary?.numeroVentas ?? 0}</Text>
+                </View>
+              </View>
 
-            <View style={styles.searchBar}>
-              <Feather name="search" size={18} color={COLORS.textLight} />
-              <TextInput
-                placeholder="Buscar por folio, producto..."
-                style={styles.searchInput}
-              />
-            </View>
+              {/* ── Detalle de ventas del día ── */}
+              <View style={styles.salesSection}>
+                <View style={styles.salesHeaderRow}>
+                  <Text style={styles.sectionTitle}>Detalle de Ventas</Text>
+                  <TouchableOpacity style={styles.filterBtn} onPress={fetchData}>
+                    <Feather name="refresh-cw" size={14} color={COLORS.primary} />
+                    <Text style={styles.filterBtnText}>Actualizar</Text>
+                  </TouchableOpacity>
+                </View>
 
-            <SaleItem
-              folio="FOL-9923"
-              time="HOY, 14:30"
-              items="3"
-              method="Pago QR"
-              amount="145.00"
-              status="Completado"
-            />
-            <SaleItem
-              folio="FOL-8022"
-              time="HOY, 12:15"
-              items="1"
-              method="Efectivo"
-              amount="25.00"
-              status="Completado"
-            />
-          </View>
+                {details.length === 0 ? (
+                  <View style={styles.emptyBox}>
+                    <Feather name="shopping-bag" size={32} color={COLORS.textMuted} />
+                    <Text style={styles.emptyText}>
+                      No hay ventas registradas hoy.{'\n'}¡Escanea productos para comenzar!
+                    </Text>
+                  </View>
+                ) : (
+                  details.map((item, index) => (
+                    <SaleCard key={item._id ?? index} item={item} index={index} />
+                  ))
+                )}
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </View>
@@ -226,16 +192,6 @@ export default function ReportesScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background, paddingBottom: 50 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
-    backgroundColor: COLORS.white,
-  },
-  headerTitle: { fontSize: 18, fontWeight: '700', color: COLORS.text },
   tabsScroll: { paddingLeft: 20, marginVertical: 15, maxHeight: 45 },
   timeTab: {
     paddingHorizontal: 20,
@@ -275,77 +231,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 10,
   },
-  mainCardTitle: {
-    flex: 1,
-    fontSize: 16,
-    color: COLORS.textMuted,
-    fontWeight: '500',
-  },
+  mainCardTitle: { flex: 1, fontSize: 16, color: COLORS.textMuted, fontWeight: '500' },
   mainValueRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 5 },
   mainValue: { fontSize: 32, fontWeight: 'bold', color: COLORS.text },
-  mainTrendBadge: {
-    backgroundColor: COLORS.greenLight,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 10,
-  },
-  mainTrendText: { color: COLORS.green, fontWeight: 'bold', fontSize: 12 },
   comparisonText: { color: COLORS.textLight, fontSize: 13 },
   metricsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginBottom: 20,
+    gap: 10,
   },
   miniCard: {
-    width: '48%',
+    flex: 1,
     backgroundColor: COLORS.white,
     padding: 15,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: COLORS.border,
+    gap: 6,
   },
   miniLabel: { fontSize: 12, color: COLORS.textMuted, marginLeft: 5 },
-  miniValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: COLORS.text,
-    marginVertical: 4,
-  },
-  trendText: { fontSize: 12, color: COLORS.green, fontWeight: '600' },
-  chartCard: {
-    backgroundColor: COLORS.white,
-    padding: 20,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    marginBottom: 20,
-  },
-  chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  chartTitle: { fontSize: 16, fontWeight: 'bold', color: COLORS.text },
-  legend: { flexDirection: 'row', alignItems: 'center' },
-  legendText: { fontSize: 12, color: COLORS.textMuted },
-  dot: { width: 8, height: 8, borderRadius: 4 },
-  chartPlaceholder: { height: 150, justifyContent: 'flex-end' },
-  chartLineMock: {
-    height: 80,
-    backgroundColor: COLORS.primaryLight,
-    borderTopWidth: 3,
-    borderTopColor: COLORS.primary,
-    opacity: 0.3,
-    borderRadius: 10,
-  },
-  chartXAxis: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-  },
-  xAxisText: { fontSize: 12, color: COLORS.textLight },
+  miniValue: { fontSize: 20, fontWeight: 'bold', color: COLORS.text },
   salesSection: { marginBottom: 30 },
   salesHeaderRow: {
     flexDirection: 'row',
@@ -354,20 +260,23 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: COLORS.text },
-  filterBtn: { flexDirection: 'row', alignItems: 'center' },
-  filterBtnText: { color: COLORS.primary, marginLeft: 5, fontWeight: '600' },
-  searchBar: {
-    flexDirection: 'row',
+  filterBtn: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  filterBtnText: { color: COLORS.primary, fontWeight: '600', fontSize: 13 },
+  emptyBox: {
     alignItems: 'center',
-    backgroundColor: COLORS.white,
-    paddingHorizontal: 15,
-    height: 45,
+    paddingVertical: 32,
+    gap: 12,
+    backgroundColor: COLORS.cardBg,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: COLORS.border,
-    marginBottom: 20,
   },
-  searchInput: { flex: 1, marginLeft: 10, fontSize: 14 },
+  emptyText: {
+    color: COLORS.textMuted,
+    fontSize: 13,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
   saleCard: {
     backgroundColor: COLORS.white,
     padding: 15,
@@ -397,14 +306,4 @@ const styles = StyleSheet.create({
   saleFolio: { fontSize: 15, fontWeight: 'bold', color: COLORS.text },
   saleDetails: { fontSize: 12, color: COLORS.textMuted, marginVertical: 4 },
   saleAmount: { fontSize: 18, fontWeight: 'bold', color: COLORS.text },
-  itemThumbs: { flexDirection: 'row', marginTop: 8 },
-  thumbPlaceholder: {
-    width: 30,
-    height: 30,
-    backgroundColor: COLORS.background,
-    borderRadius: 6,
-    marginRight: 5,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
 });

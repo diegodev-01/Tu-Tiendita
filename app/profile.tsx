@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useAuth } from '@/src/context/auth';
 import { COLORS } from '@/src/styles/colors';
 import { type SFSymbols7_0 } from 'sf-symbols-typescript';
 
@@ -74,6 +75,7 @@ function MenuOption({
 export default function ProfileScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { logout } = useAuth();
 
   const handleBack = () => {
     router.back();
@@ -88,8 +90,10 @@ export default function ProfileScreen() {
         {
           text: 'Sí, Salir',
           style: 'destructive',
-          onPress: () =>
-            console.log('Log out presionado - Limpiar tokens aquí'),
+          onPress: async () => {
+            await logout(); // borra token de SecureStore y limpia axios
+            router.replace('/login'); // redirige al login sin dejar historial
+          },
         },
       ],
     );
@@ -185,7 +189,7 @@ export default function ProfileScreen() {
             icon="printer"
             title="Configurar Impresora"
             subtitle="Vincular terminal térmica Bluetooth"
-            onPress={() => console.log('Navegar a impresoras')}
+            onPress={() => console.log('Navegar a impresoras')} 
           />
 
           <MenuOption

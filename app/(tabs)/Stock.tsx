@@ -117,7 +117,6 @@ export default function StockScreen() {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={{ padding: 20 }}>
-        {/* ── Sugerencias de Pedido ── */}
         <View style={styles.titleContainer}>
           <Text style={styles.sectionTitle}>Sugerencias de Pedido</Text>
           <ButtonComponent

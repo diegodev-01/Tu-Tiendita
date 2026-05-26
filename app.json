@@ -24,7 +24,6 @@
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.NFC",
         "android.permission.NFC"
       ],
       "package": "com.anonymous.Tutiendita"
@@ -58,6 +57,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "af50da71-dc33-46e0-b1f2-3aca8ce3fbb5"
+      }
     }
   }
 }

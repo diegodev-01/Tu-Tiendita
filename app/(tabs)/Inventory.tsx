@@ -190,7 +190,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background,
     padding: 20,
-    paddingBottom: 0,
+    paddingBottom: 50,
   },
   centered: {
     flex: 1,
